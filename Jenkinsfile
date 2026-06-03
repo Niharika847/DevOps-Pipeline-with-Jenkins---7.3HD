@@ -1,7 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
+
     stages {
+
         stage('Build') {
             steps {
                 echo 'Build: Installing dependencies'
@@ -32,30 +37,40 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploy: Starting app locally'
+                echo 'Deploy: Starting application'
+
                 sh 'pkill node || true'
                 sh 'nohup /usr/local/bin/npm start > app.log 2>&1 &'
+
                 sh 'sleep 5'
+
                 sh 'curl http://localhost:3000'
             }
         }
 
         stage('Release') {
             steps {
-                echo 'Release: Creating release file'
+                echo 'Release: Creating release version'
+
                 sh 'echo "Release version: v1.0.${BUILD_NUMBER}" > release.txt'
+
                 sh 'cat release.txt'
             }
         }
     }
 
     post {
+
         success {
             echo 'Pipeline completed successfully.'
         }
 
         failure {
             echo 'Pipeline failed. Check the console output.'
+        }
+
+        always {
+            archiveArtifacts artifacts: 'release.txt', allowEmptyArchive: true
         }
     }
 }
