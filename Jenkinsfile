@@ -1,58 +1,48 @@
 pipeline {
     agent any
 
-    environment {
-        APP_NAME = "devops-hd-pipeline"
-        IMAGE_NAME = "devops-hd-pipeline:${BUILD_NUMBER}"
-    }
-
     stages {
         stage('Build') {
             steps {
-                echo 'Stage 1: Build - Installing project dependencies'
-                sh 'npm install'
+                echo 'Build: Installing dependencies'
+                sh '/usr/local/bin/npm install'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Stage 2: Test - Running automated unit tests'
-                sh 'npm test'
+                echo 'Test: Running Jest tests'
+                sh '/usr/local/bin/npm test'
             }
         }
 
         stage('Code Quality') {
             steps {
-                echo 'Stage 3: Code Quality - Checking code quality'
-                sh 'npm test'
-                echo 'Code quality check completed. Tests passed and code structure is clean.'
+                echo 'Code Quality: Running tests as quality check'
+                sh '/usr/local/bin/npm test'
             }
         }
 
         stage('Security') {
             steps {
-                echo 'Stage 4: Security - Running npm audit for vulnerabilities'
-                sh 'npm audit --audit-level=high || true'
+                echo 'Security: Running npm audit'
+                sh '/usr/local/bin/npm audit --audit-level=high || true'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Stage 5: Deploy - Building Docker image'
-                sh 'docker build -t $IMAGE_NAME .'
-
-                echo 'Stopping old container if it exists'
-                sh 'docker stop $APP_NAME || true'
-                sh 'docker rm $APP_NAME || true'
-
-                echo 'Running new Docker container'
-                sh 'docker run -d --name $APP_NAME -p 3000:3000 $IMAGE_NAME'
+                echo 'Deploy: Starting app locally'
+                sh 'pkill node || true'
+                sh 'nohup /usr/local/bin/npm start > app.log 2>&1 &'
+                sh 'sleep 5'
+                sh 'curl http://localhost:3000'
             }
         }
 
         stage('Release') {
             steps {
-                echo 'Stage 6: Release - Creating release version'
+                echo 'Release: Creating release file'
                 sh 'echo "Release version: v1.0.${BUILD_NUMBER}" > release.txt'
                 sh 'cat release.txt'
             }
